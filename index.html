@@ -17,15 +17,17 @@ button { cursor: pointer; }
 
 <h1>シャドバ戦績管理</h1>
 
-<label>自分のデッキ:
-<select id="myDeck">
+<label>使用デッキ:
+<select id="myDeck" onchange="showStats()">
   <option>ランプドラゴン</option>
   <option>アグロネクロ</option>
   <option>ロイヤル</option>
 </select>
 </label>
 
-<label>相手クラス:
+<br>
+
+<label>相手のクラス:
 <select id="opponentClass">
   <option>エルフ</option>
   <option>ビショップ</option>
@@ -52,20 +54,23 @@ function saveResult(result) {
 }
 
 function showStats() {
-  if (matches.length === 0) {
-    document.getElementById('stats').innerHTML = "<p>まだ記録がありません</p>";
+  const selectedDeck = document.getElementById('myDeck').value;
+  const deckMatches = matches.filter(m => m.deck === selectedDeck);
+
+  if (deckMatches.length === 0) {
+    document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
     return;
   }
-  const total = matches.length;
-  const wins = matches.filter(m => m.result === '勝ち').length;
-  let html = `<p>全体勝率: ${(wins/total*100 || 0).toFixed(1)}% (${wins}勝/${total}試合)</p>`;
-  
-  // デッキ別勝率
-  const decks = [...new Set(matches.map(m => m.deck))];
-  decks.forEach(deck => {
-    const deckGames = matches.filter(m => m.deck === deck);
-    const deckWins = deckGames.filter(m => m.result === '勝ち').length;
-    html += `<p>${deck} 勝率: ${(deckWins/deckGames.length*100).toFixed(1)}% (${deckWins}勝/${deckGames.length}試合)</p>`;
+
+  let html = `<h3>${selectedDeck} の相手クラス別勝率</h3>`;
+
+  // 相手クラスごとの勝率
+  const opponents = [...new Set(deckMatches.map(m => m.opponent))];
+  opponents.forEach(op => {
+    const games = deckMatches.filter(m => m.opponent === op);
+    const wins = games.filter(m => m.result === '勝ち').length;
+    const winRate = (wins / games.length * 100).toFixed(1);
+    html += `<p>${op}: ${winRate}% (${wins}勝/${games.length}試合)</p>`;
   });
 
   document.getElementById('stats').innerHTML = html;
