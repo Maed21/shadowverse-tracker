@@ -80,13 +80,19 @@
   <div class="history" id="history"></div>
 
   <script>
+    // 安全にlocalStorageから配列を取得、無効なら初期値をセット
+    function loadOrDefault(key, defaultArray) {
+      try {
+        const data = JSON.parse(localStorage.getItem(key));
+        if (Array.isArray(data) && data.length > 0) return data;
+      } catch {}
+      localStorage.setItem(key, JSON.stringify(defaultArray));
+      return defaultArray;
+    }
+
+    let decks = loadOrDefault('decks', ['ランプドラゴン', 'アグロネクロ', 'ロイヤル']);
+    let classes = loadOrDefault('classes', ['エルフ', 'ビショップ', 'ヴァンパイア']);
     let matches = JSON.parse(localStorage.getItem('matches')) || [];
-    let decks =
-      JSON.parse(localStorage.getItem('decks')) ||
-      ['ランプドラゴン', 'アグロネクロ', 'ロイヤル'];
-    let classes =
-      JSON.parse(localStorage.getItem('classes')) ||
-      ['エルフ', 'ビショップ', 'ヴァンパイア'];
 
     // 初期化
     function initSelectOptions() {
