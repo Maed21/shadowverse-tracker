@@ -164,26 +164,38 @@
       showHistory();
     }
 
-    function showStats() {
-      const selectedDeck = document.getElementById('myDeck').value;
-      const deckMatches = matches.filter(m => m.deck === selectedDeck);
+function showStats() {
+      const selectedDeck = document.getElementById('myDeck').value;
+      const deckMatches = matches.filter(m => m.deck === selectedDeck);
 
-      if (deckMatches.length === 0) {
-        document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
-        return;
-      }
+      if (deckMatches.length === 0) {
+        document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
+        return;
+      }
 
-      let html = `<h3>${selectedDeck} の相手クラス別勝率</h3>`;
-      const opponents = [...new Set(deckMatches.map(m => m.opponent))];
-      opponents.forEach(op => {
-        const games = deckMatches.filter(m => m.opponent === op);
-        const wins = games.filter(m => m.result === '勝ち').length;
-        const winRate = ((wins / games.length) * 100).toFixed(1);
-        html += `<p>${op}: ${winRate}% (${wins}勝/${games.length}試合)</p>`;
-      });
+      let html = `<h3>${selectedDeck} の戦績</h3>`; // タイトルを修正
+      const totalGames = deckMatches.length;
+      const totalWins = deckMatches.filter(m => m.result === '勝ち').length;
+      const totalLosses = totalGames - totalWins; // 敗北数を計算
+      const totalWinRate = ((totalWins / totalGames) * 100).toFixed(1);
 
-      document.getElementById('stats').innerHTML = html;
-    }
+      // 総合勝率の表示を修正
+      html += `<p>総合勝率: ${totalWinRate}% (${totalWins}-${totalLosses})</p>`;
+      
+      html += `<h3>${selectedDeck} の相手クラス別勝率</h3>`;
+      const opponents = [...new Set(deckMatches.map(m => m.opponent))];
+      opponents.forEach(op => {
+        const games = deckMatches.filter(m => m.opponent === op);
+        const wins = games.filter(m => m.result === '勝ち').length;
+        const losses = games.length - wins; // 敗北数を計算
+        const winRate = ((wins / games.length) * 100).toFixed(1);
+
+        // 対戦相手別勝率の表示を修正
+        html += `<p>${op}: ${winRate}% (${wins}-${losses})</p>`;
+      });
+
+      document.getElementById('stats').innerHTML = html;
+　}
 
     function showHistory() {
       if (matches.length === 0) {
