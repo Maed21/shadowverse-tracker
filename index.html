@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シャドバ戦績管理</title>
+<link rel="manifest" href="manifest.json">
+<style>
+body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+h1 { text-align: center; }
+select, button { margin: 5px; padding: 10px; font-size: 16px; }
+button { cursor: pointer; }
+.stats { margin-top: 20px; background: white; padding: 10px; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<h1>シャドバ戦績管理</h1>
+
+<label>自分のデッキ:
+<select id="myDeck">
+  <option>ランプドラゴン</option>
+  <option>アグロネクロ</option>
+  <option>ロイヤル</option>
+</select>
+</label>
+
+<label>相手クラス:
+<select id="opponentClass">
+  <option>エルフ</option>
+  <option>ビショップ</option>
+  <option>ヴァンパイア</option>
+</select>
+</label>
+
+<div>
+  <button onclick="saveResult('勝ち')">勝ち</button>
+  <button onclick="saveResult('負け')">負け</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<script>
+let matches = JSON.parse(localStorage.getItem('matches')) || [];
+
+function saveResult(result) {
+  const deck = document.getElementById('myDeck').value;
+  const opponent = document.getElementById('opponentClass').value;
+  matches.push({ deck, opponent, result });
+  localStorage.setItem('matches', JSON.stringify(matches));
+  showStats();
+}
+
+function showStats() {
+  if (matches.length === 0) {
+    document.getElementById('stats').innerHTML = "<p>まだ記録がありません</p>";
+    return;
+  }
+  const total = matches.length;
+  const wins = matches.filter(m => m.result === '勝ち').length;
+  let html = `<p>全体勝率: ${(wins/total*100 || 0).toFixed(1)}% (${wins}勝/${total}試合)</p>`;
+  
+  // デッキ別勝率
+  const decks = [...new Set(matches.map(m => m.deck))];
+  decks.forEach(deck => {
+    const deckGames = matches.filter(m => m.deck === deck);
+    const deckWins = deckGames.filter(m => m.result === '勝ち').length;
+    html += `<p>${deck} 勝率: ${(deckWins/deckGames.length*100).toFixed(1)}% (${deckWins}勝/${deckGames.length}試合)</p>`;
+  });
+
+  document.getElementById('stats').innerHTML = html;
+}
+
+showStats();
+</script>
+
+<script>
+// PWA用のService Worker登録
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js');
+}
+</script>
+
+</body>
+</html>
