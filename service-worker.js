@@ -1,11 +1,23 @@
+const CACHE_NAME = 'sv-record-v3';
+
 self.addEventListener('install', event => {
-  // すぐに新しいService Workerを有効化
+  // 新しいSWをすぐ使う
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  // 古いキャッシュを削除 & すぐにクライアントを制御
-  event.waitUntil(clients.claim());
+  // 古いキャッシュ削除 & 即制御
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(name => {
+          if (name !== CACHE_NAME) {
+            return caches.delete(name);
+          }
+        })
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('fetch', event => {
