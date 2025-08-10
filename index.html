@@ -1,137 +1,219 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>シャドバ戦績管理</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json" />
 <style>
-body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-h1 { text-align: center; }
-select, button, input { margin: 5px; padding: 10px; font-size: 16px; }
-button { cursor: pointer; }
-.stats, .history { margin-top: 20px; background: white; padding: 10px; border-radius: 8px; }
-.list-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #ddd; }
-.list-item:last-child { border-bottom: none; }
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    background: #f4f4f4;
+  }
+  h1 {
+    text-align: center;
+  }
+  select,
+  button,
+  input {
+    margin: 5px;
+    padding: 10px;
+    font-size: 16px;
+  }
+  button {
+    cursor: pointer;
+  }
+  .stats,
+  .history {
+    margin-top: 20px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .list-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid #ddd;
+  }
+  .list-item:last-child {
+    border-bottom: none;
+  }
 </style>
 </head>
 <body>
+  <h1>シャドバ戦績管理</h1>
 
-<h1>シャドバ戦績管理</h1>
+  <!-- デッキ管理 -->
+  <div>
+    <label>使用デッキ:
+      <select id="myDeck" onchange="showStats()"></select>
+    </label>
+    <input type="text" id="newDeck" placeholder="デッキ名を追加" />
+    <button onclick="addDeck()">追加</button>
+    <button onclick="removeDeck()">削除</button>
+  </div>
 
-<!-- デッキ管理 -->
-<div>
-  <label>使用デッキ:
-    <select id="myDeck" onchange="showStats()"></select>
-  </label>
-  <input type="text" id="newDeck" placeholder="デッキ名を追加">
-  <button onclick="addDeck()">追加</button>
-  <button onclick="removeDeck()">削除</button>
-</div>
+  <br />
 
-<br>
+  <!-- クラス管理 -->
+  <div>
+    <label>相手のクラス:
+      <select id="opponentClass"></select>
+    </label>
+    <input type="text" id="newClass" placeholder="クラス名を追加" />
+    <button onclick="addClass()">追加</button>
+    <button onclick="removeClass()">削除</button>
+  </div>
 
-<!-- クラス管理 -->
-<div>
-  <label>相手のクラス:
-    <select id="opponentClass"></select>
-  </label>
-  <input type="text" id="newClass" placeholder="クラス名を追加">
-  <button onclick="addClass()">追加</button>
-  <button onclick="removeClass()">削除</button>
-</div>
+  <!-- 勝敗ボタン -->
+  <div>
+    <button onclick="saveResult('勝ち')">勝ち</button>
+    <button onclick="saveResult('負け')">負け</button>
+  </div>
 
-<!-- 勝敗ボタン -->
-<div>
-  <button onclick="saveResult('勝ち')">勝ち</button>
-  <button onclick="saveResult('負け')">負け</button>
-</div>
+  <!-- 勝率表示 -->
+  <div class="stats" id="stats"></div>
 
-<!-- 勝率表示 -->
-<div class="stats" id="stats"></div>
+  <!-- 戦績一覧 -->
+  <div class="history" id="history"></div>
 
-<!-- 戦績一覧 -->
-<div class="history" id="history"></div>
+  <script>
+    let matches = JSON.parse(localStorage.getItem('matches')) || [];
+    let decks =
+      JSON.parse(localStorage.getItem('decks')) ||
+      ['ランプドラゴン', 'アグロネクロ', 'ロイヤル'];
+    let classes =
+      JSON.parse(localStorage.getItem('classes')) ||
+      ['エルフ', 'ビショップ', 'ヴァンパイア'];
 
-<script>
-let matches = JSON.parse(localStorage.getItem('matches')) || [];
-let decks = JSON.parse(localStorage.getItem('decks')) || ["ランプドラゴン", "アグロネクロ", "ロイヤル"];
-let classes = JSON.parse(localStorage.getItem('classes')) || ["エルフ", "ビショップ", "ヴァンパイア"];
+    // 初期化
+    function initSelectOptions() {
+      const deckSelect = document.getElementById('myDeck');
+      deckSelect.innerHTML = '';
+      decks.forEach(d => {
+        let opt = document.createElement('option');
+        opt.textContent = d;
+        deckSelect.appendChild(opt);
+      });
 
-// 初期化
-function initSelectOptions() {
-  const deckSelect = document.getElementById('myDeck');
-  deckSelect.innerHTML = "";
-  decks.forEach(d => {
-    let opt = document.createElement('option');
-    opt.textContent = d;
-    deckSelect.appendChild(opt);
-  });
+      const classSelect = document.getElementById('opponentClass');
+      classSelect.innerHTML = '';
+      classes.forEach(c => {
+        let opt = document.createElement('option');
+        opt.textContent = c;
+        classSelect.appendChild(opt);
+      });
+    }
 
-  const classSelect = document.getElementById('opponentClass');
-  classSelect.innerHTML = "";
-  classes.forEach(c => {
-    let opt = document.createElement('option');
-    opt.textContent = c;
-    classSelect.appendChild(opt);
-  });
-}
+    function addDeck() {
+      const val = document.getElementById('newDeck').value.trim();
+      if (val && !decks.includes(val)) {
+        decks.push(val);
+        localStorage.setItem('decks', JSON.stringify(decks));
+        initSelectOptions();
+        document.getElementById('newDeck').value = '';
+      }
+    }
 
-function addDeck() {
-  const val = document.getElementById('newDeck').value.trim();
-  if (val && !decks.includes(val)) {
-    decks.push(val);
-    localStorage.setItem('decks', JSON.stringify(decks));
+    function removeDeck() {
+      const val = document.getElementById('myDeck').value;
+      decks = decks.filter(d => d !== val);
+      localStorage.setItem('decks', JSON.stringify(decks));
+      matches = matches.filter(m => m.deck !== val); // 戦績も削除
+      localStorage.setItem('matches', JSON.stringify(matches));
+      initSelectOptions();
+      showStats();
+      showHistory();
+    }
+
+    function addClass() {
+      const val = document.getElementById('newClass').value.trim();
+      if (val && !classes.includes(val)) {
+        classes.push(val);
+        localStorage.setItem('classes', JSON.stringify(classes));
+        initSelectOptions();
+        document.getElementById('newClass').value = '';
+      }
+    }
+
+    function removeClass() {
+      const val = document.getElementById('opponentClass').value;
+      classes = classes.filter(c => c !== val);
+      localStorage.setItem('classes', JSON.stringify(classes));
+      matches = matches.filter(m => m.opponent !== val); // 戦績も削除
+      localStorage.setItem('matches', JSON.stringify(matches));
+      initSelectOptions();
+      showStats();
+      showHistory();
+    }
+
+    function saveResult(result) {
+      const deck = document.getElementById('myDeck').value;
+      const opponent = document.getElementById('opponentClass').value;
+      matches.push({ deck, opponent, result });
+      localStorage.setItem('matches', JSON.stringify(matches));
+      showStats();
+      showHistory();
+    }
+
+    function showStats() {
+      const selectedDeck = document.getElementById('myDeck').value;
+      const deckMatches = matches.filter(m => m.deck === selectedDeck);
+
+      if (deckMatches.length === 0) {
+        document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
+        return;
+      }
+
+      let html = `<h3>${selectedDeck} の相手クラス別勝率</h3>`;
+      const opponents = [...new Set(deckMatches.map(m => m.opponent))];
+      opponents.forEach(op => {
+        const games = deckMatches.filter(m => m.opponent === op);
+        const wins = games.filter(m => m.result === '勝ち').length;
+        const winRate = ((wins / games.length) * 100).toFixed(1);
+        html += `<p>${op}: ${winRate}% (${wins}勝/${games.length}試合)</p>`;
+      });
+
+      document.getElementById('stats').innerHTML = html;
+    }
+
+    function showHistory() {
+      if (matches.length === 0) {
+        document.getElementById('history').innerHTML = '<p>戦績はまだありません</p>';
+        return;
+      }
+
+      let html = `<h3>戦績一覧</h3>`;
+      matches.forEach((m, idx) => {
+        html += `<div class="list-item">
+      <span>${m.deck} vs ${m.opponent} - ${m.result}</span>
+      <button onclick="deleteMatch(${idx})">削除</button>
+    </div>`;
+      });
+
+      document.getElementById('history').innerHTML = html;
+    }
+
+    function deleteMatch(index) {
+      matches.splice(index, 1);
+      localStorage.setItem('matches', JSON.stringify(matches));
+      showStats();
+      showHistory();
+    }
+
+    // 初期表示
     initSelectOptions();
-    document.getElementById('newDeck').value = "";
-  }
-}
+    showStats();
+    showHistory();
+  </script>
 
-function removeDeck() {
-  const val = document.getElementById('myDeck').value;
-  decks = decks.filter(d => d !== val);
-  localStorage.setItem('decks', JSON.stringify(decks));
-  matches = matches.filter(m => m.deck !== val); // 戦績も削除
-  localStorage.setItem('matches', JSON.stringify(matches));
-  initSelectOptions();
-  showStats();
-  showHistory();
-}
-
-function addClass() {
-  const val = document.getElementById('newClass').value.trim();
-  if (val && !classes.includes(val)) {
-    classes.push(val);
-    localStorage.setItem('classes', JSON.stringify(classes));
-    initSelectOptions();
-    document.getElementById('newClass').value = "";
-  }
-}
-
-function removeClass() {
-  const val = document.getElementById('opponentClass').value;
-  classes = classes.filter(c => c !== val);
-  localStorage.setItem('classes', JSON.stringify(classes));
-  matches = matches.filter(m => m.opponent !== val); // 戦績も削除
-  localStorage.setItem('matches', JSON.stringify(matches));
-  initSelectOptions();
-  showStats();
-  showHistory();
-}
-
-function saveResult(result) {
-  const deck = document.getElementById('myDeck').value;
-  const opponent = document.getElementById('opponentClass').value;
-  matches.push({ deck, opponent, result });
-  localStorage.setItem('matches', JSON.stringify(matches));
-  showStats();
-  showHistory();
-}
-
-function showStats() {
-  const selectedDeck = document.getElementById('myDeck').value;
-  const deckMatches = matches.filter(m => m.deck === selectedDeck);
-
-  if (deckMatches.length === 0) {
-    document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
-    return;
+  <script>
+    // PWA用のService Worker登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
