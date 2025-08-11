@@ -6,12 +6,12 @@
 <title>シャドバ戦績管理</title>
 <link rel="manifest" href="manifest.json" />
 <style>
-　body {
-  font-family: sans-serif;
-  padding: 20px;
-  background: #12283D; /* 紺色を指定 */
-  color: white; /* 文字色を白に変更 */
-　}
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    background: #12283D; /* 紺色を指定 */
+    color: white; /* 文字色を白に変更 */
+  }
   h1 {
     text-align: center;
   }
@@ -41,35 +41,47 @@
   .list-item:last-child {
     border-bottom: none;
   }
+  .add-form {
+    display: none; /* デフォルトで非表示 */
+    margin-top: 10px;
+  }
 </style>
 </head>
 <body>
   <h1>シャドバ戦績管理</h1>
 
     <div>
-    <label>使用デッキ:
-      <select id="myDeck" onchange="showStats()"></select>
-    </label>
-    <input type="text" id="newDeck" placeholder="デッキ名を追加" />
-    <button onclick="addDeck()">追加</button>
-    <button onclick="removeDeck()">削除</button>
-  </div>
-
-  <br />
-
-    <div>
-    <label>相手のクラス:
-      <select id="opponentClass"></select>
-    </label>
-    <input type="text" id="newClass" placeholder="クラス名を追加" />
-    <button onclick="addClass()">追加</button>
-    <button onclick="removeClass()">削除</button>
-  </div>
-
-    <div>
+    <label>使用デッキ: <select id="myDeck" onchange="showStats()"></select></label>
+    <br />
+    <label>相手のクラス: <select id="opponentClass"></select></label>
+    <br />
     <button onclick="saveResult('勝ち')">勝ち</button>
     <button onclick="saveResult('負け')">負け</button>
   </div>
+
+  <hr />
+
+    <div>
+    <button id="toggleAddDeckBtn" onclick="toggleAddForm('addDeckForm', 'toggleAddDeckBtn')">デッキ追加</button>
+    <div id="addDeckForm" class="add-form">
+      <input type="text" id="newDeck" placeholder="デッキ名を入力" />
+      <button onclick="addDeck(); toggleAddForm('addDeckForm', 'toggleAddDeckBtn')">保存</button>
+      <button onclick="toggleAddForm('addDeckForm', 'toggleAddDeckBtn')">キャンセル</button>
+    </div>
+    <button onclick="removeDeck()">デッキ削除</button>
+  </div>
+
+    <div>
+    <button id="toggleAddClassBtn" onclick="toggleAddForm('addClassForm', 'toggleAddClassBtn')">クラス追加</button>
+    <div id="addClassForm" class="add-form">
+      <input type="text" id="newClass" placeholder="クラス名を入力" />
+      <button onclick="addClass(); toggleAddForm('addClassForm', 'toggleAddClassBtn')">保存</button>
+      <button onclick="toggleAddForm('addClassForm', 'toggleAddClassBtn')">キャンセル</button>
+    </div>
+    <button onclick="removeClass()">クラス削除</button>
+  </div>
+
+  <hr />
 
     <div>
     <label>開始日: <input type="date" id="startDate"></label>
@@ -94,8 +106,20 @@
 
     let decks = loadOrDefault('decks', ['ランプドラゴン', 'アグロネクロ', 'ロイヤル']);
     let classes = loadOrDefault('classes', ['エルフ', 'ビショップ', 'ヴァンパイア']);
-    // 新しいデータ形式に対応
     let matches = JSON.parse(localStorage.getItem('matches')) || [];
+
+    // UIの表示・非表示を切り替える
+    function toggleAddForm(formId, buttonId) {
+      const form = document.getElementById(formId);
+      const button = document.getElementById(buttonId);
+      if (form.style.display === 'block') {
+        form.style.display = 'none';
+        button.textContent = button.id === 'toggleAddDeckBtn' ? 'デッキ追加' : 'クラス追加';
+      } else {
+        form.style.display = 'block';
+        button.textContent = '閉じる';
+      }
+    }
 
     // 初期化
     function initSelectOptions() {
@@ -130,7 +154,7 @@
       const val = document.getElementById('myDeck').value;
       decks = decks.filter(d => d !== val);
       localStorage.setItem('decks', JSON.stringify(decks));
-      matches = matches.filter(m => m.deck !== val); // 戦績も削除
+      matches = matches.filter(m => m.deck !== val);
       localStorage.setItem('matches', JSON.stringify(matches));
       initSelectOptions();
       showStats();
@@ -151,7 +175,7 @@
       const val = document.getElementById('opponentClass').value;
       classes = classes.filter(c => c !== val);
       localStorage.setItem('classes', JSON.stringify(classes));
-      matches = matches.filter(m => m.opponent !== val); // 戦績も削除
+      matches = matches.filter(m => m.opponent !== val);
       localStorage.setItem('matches', JSON.stringify(matches));
       initSelectOptions();
       showStats();
@@ -161,8 +185,8 @@
     function saveResult(result) {
       const deck = document.getElementById('myDeck').value;
       const opponent = document.getElementById('opponentClass').value;
-      const timestamp = new Date().toLocaleString(); // 日時を記録
-      matches.unshift({ deck, opponent, result, timestamp }); // 新しいデータを配列の先頭に追加
+      const timestamp = new Date().toLocaleString();
+      matches.unshift({ deck, opponent, result, timestamp });
       localStorage.setItem('matches', JSON.stringify(matches));
       showStats();
       showHistory();
@@ -173,7 +197,6 @@
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
 
-      // 日付で絞り込み
       let filteredMatches = matches.filter(m => m.deck === selectedDeck);
       if (startDate) {
         filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) >= new Date(startDate));
@@ -212,7 +235,6 @@
       const startDate = document.getElementById('startDate').value;
       const endDate = document.getElementById('endDate').value;
 
-      // 日付で絞り込み
       let filteredMatches = matches;
       if (startDate) {
         filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) >= new Date(startDate));
