@@ -82,6 +82,21 @@
     <div class="history" id="history"></div>
 
   <script>
+    <script>
+  // すでにデータが存在する場合のみ実行
+  if (localStorage.getItem('matches')) {
+    let matches = JSON.parse(localStorage.getItem('matches'));
+    // すべてのデータに2025/8/11 00:00:00の日時情報を追加
+    matches.forEach(match => {
+      if (!match.timestamp) {
+        match.timestamp = '2025/8/11 0:00:00';
+      }
+    });
+    // 更新されたデータをlocalStorageに保存
+    localStorage.setItem('matches', JSON.stringify(matches));
+    console.log('既存の全データを2025/8/11のデータに更新しました。');
+  }
+</script>
     // 安全にlocalStorageから配列を取得、無効なら初期値をセット
     function loadOrDefault(key, defaultArray) {
       try {
