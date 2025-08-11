@@ -6,12 +6,12 @@
 <title>シャドバ戦績管理</title>
 <link rel="manifest" href="manifest.json" />
 <style>
-  body {
-    font-family: sans-serif;
-    padding: 20px;
-    background: #12283D; /* 紺色を指定 */
-    color: white; /* 文字色を白に変更 */
-  }
+　body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #12283D; /* 紺色を指定 */
+  color: white; /* 文字色を白に変更 */
+　}
   h1 {
     text-align: center;
   }
@@ -94,6 +94,7 @@
 
     let decks = loadOrDefault('decks', ['ランプドラゴン', 'アグロネクロ', 'ロイヤル']);
     let classes = loadOrDefault('classes', ['エルフ', 'ビショップ', 'ヴァンパイア']);
+    // 新しいデータ形式に対応
     let matches = JSON.parse(localStorage.getItem('matches')) || [];
 
     // 初期化
@@ -129,4 +130,131 @@
       const val = document.getElementById('myDeck').value;
       decks = decks.filter(d => d !== val);
       localStorage.setItem('decks', JSON.stringify(decks));
-      matches = matches
+      matches = matches.filter(m => m.deck !== val); // 戦績も削除
+      localStorage.setItem('matches', JSON.stringify(matches));
+      initSelectOptions();
+      showStats();
+      showHistory();
+    }
+
+    function addClass() {
+      const val = document.getElementById('newClass').value.trim();
+      if (val && !classes.includes(val)) {
+        classes.push(val);
+        localStorage.setItem('classes', JSON.stringify(classes));
+        initSelectOptions();
+        document.getElementById('newClass').value = '';
+      }
+    }
+
+    function removeClass() {
+      const val = document.getElementById('opponentClass').value;
+      classes = classes.filter(c => c !== val);
+      localStorage.setItem('classes', JSON.stringify(classes));
+      matches = matches.filter(m => m.opponent !== val); // 戦績も削除
+      localStorage.setItem('matches', JSON.stringify(matches));
+      initSelectOptions();
+      showStats();
+      showHistory();
+    }
+
+    function saveResult(result) {
+      const deck = document.getElementById('myDeck').value;
+      const opponent = document.getElementById('opponentClass').value;
+      const timestamp = new Date().toLocaleString(); // 日時を記録
+      matches.unshift({ deck, opponent, result, timestamp }); // 新しいデータを配列の先頭に追加
+      localStorage.setItem('matches', JSON.stringify(matches));
+      showStats();
+      showHistory();
+    }
+
+    function showStats() {
+      const selectedDeck = document.getElementById('myDeck').value;
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      // 日付で絞り込み
+      let filteredMatches = matches.filter(m => m.deck === selectedDeck);
+      if (startDate) {
+        filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) >= new Date(startDate));
+      }
+      if (endDate) {
+        filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) <= new Date(endDate));
+      }
+
+      if (filteredMatches.length === 0) {
+        document.getElementById('stats').innerHTML = `<p>${selectedDeck} の記録がありません</p>`;
+        return;
+      }
+
+      let html = `<h3>${selectedDeck} の戦績</h3>`;
+      const totalGames = filteredMatches.length;
+      const totalWins = filteredMatches.filter(m => m.result === '勝ち').length;
+      const totalLosses = totalGames - totalWins;
+      const totalWinRate = ((totalWins / totalGames) * 100).toFixed(1);
+
+      html += `<p>総合勝率: ${totalWinRate}% (${totalWins}-${totalLosses})</p>`;
+      
+      html += `<h3>${selectedDeck} の相手クラス別勝率</h3>`;
+      const opponents = [...new Set(filteredMatches.map(m => m.opponent))];
+      opponents.forEach(op => {
+        const games = filteredMatches.filter(m => m.opponent === op);
+        const wins = games.filter(m => m.result === '勝ち').length;
+        const losses = games.length - wins;
+        const winRate = ((wins / games.length) * 100).toFixed(1);
+        html += `<p>${op}: ${winRate}% (${wins}-${losses})</p>`;
+      });
+
+      document.getElementById('stats').innerHTML = html;
+    }
+
+    function showHistory() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      // 日付で絞り込み
+      let filteredMatches = matches;
+      if (startDate) {
+        filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) >= new Date(startDate));
+      }
+      if (endDate) {
+        filteredMatches = filteredMatches.filter(m => new Date(m.timestamp) <= new Date(endDate));
+      }
+
+      if (filteredMatches.length === 0) {
+        document.getElementById('history').innerHTML = '<p>戦績はまだありません</p>';
+        return;
+      }
+
+      let html = `<h3>戦績一覧</h3>`;
+      filteredMatches.forEach((m, idx) => {
+        html += `<div class="list-item">
+      <span>${m.timestamp} - ${m.deck} vs ${m.opponent} - ${m.result}</span>
+      <button onclick="deleteMatch(${idx})">削除</button>
+    </div>`;
+      });
+
+      document.getElementById('history').innerHTML = html;
+    }
+
+    function deleteMatch(index) {
+      matches.splice(index, 1);
+      localStorage.setItem('matches', JSON.stringify(matches));
+      showStats();
+      showHistory();
+    }
+
+    // 初期表示
+    initSelectOptions();
+    showStats();
+    showHistory();
+  </script>
+
+  <script>
+    // PWA用のService Worker登録
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
