@@ -41,7 +41,7 @@
   .list-item:last-child {
     border-bottom: none;
   }
-  .add-form {
+  .add-form, .remove-form {
     display: none; /* デフォルトで非表示 */
     margin-top: 10px;
   }
@@ -68,7 +68,11 @@
       <button onclick="addDeck(); toggleAddForm('addDeckForm', 'toggleAddDeckBtn')">保存</button>
       <button onclick="toggleAddForm('addDeckForm', 'toggleAddDeckBtn')">キャンセル</button>
     </div>
-    <button onclick="removeDeck()">デッキ削除</button>
+    <button id="toggleRemoveDeckBtn" onclick="toggleRemoveForm('removeDeckForm', 'toggleRemoveDeckBtn', 'myDeck')">デッキ削除</button>
+    <div id="removeDeckForm" class="remove-form">
+      <label>削除するデッキ: <select id="removeDeckSelect"></select></label>
+      <button onclick="removeDeck(); toggleRemoveForm('removeDeckForm', 'toggleRemoveDeckBtn', 'myDeck')">確定</button>
+    </div>
   </div>
 
     <div>
@@ -78,7 +82,11 @@
       <button onclick="addClass(); toggleAddForm('addClassForm', 'toggleAddClassBtn')">保存</button>
       <button onclick="toggleAddForm('addClassForm', 'toggleAddClassBtn')">キャンセル</button>
     </div>
-    <button onclick="removeClass()">クラス削除</button>
+    <button id="toggleRemoveClassBtn" onclick="toggleRemoveForm('removeClassForm', 'toggleRemoveClassBtn', 'opponentClass')">クラス削除</button>
+    <div id="removeClassForm" class="remove-form">
+      <label>削除するクラス: <select id="removeClassSelect"></select></label>
+      <button onclick="removeClass(); toggleRemoveForm('removeClassForm', 'toggleRemoveClassBtn', 'opponentClass')">確定</button>
+    </div>
   </div>
 
   <hr />
@@ -108,7 +116,7 @@
     let classes = loadOrDefault('classes', ['エルフ', 'ビショップ', 'ヴァンパイア']);
     let matches = JSON.parse(localStorage.getItem('matches')) || [];
 
-    // UIの表示・非表示を切り替える
+    // UIの表示・非表示を切り替える (追加用)
     function toggleAddForm(formId, buttonId) {
       const form = document.getElementById(formId);
       const button = document.getElementById(buttonId);
@@ -121,22 +129,50 @@
       }
     }
 
+    // UIの表示・非表示を切り替える (削除用)
+    function toggleRemoveForm(formId, buttonId, selectId) {
+      const form = document.getElementById(formId);
+      const button = document.getElementById(buttonId);
+      const select = document.getElementById(selectId);
+      const removeSelect = document.getElementById(formId === 'removeDeckForm' ? 'removeDeckSelect' : 'removeClassSelect');
+
+      if (form.style.display === 'block') {
+        form.style.display = 'none';
+        button.textContent = button.id === 'toggleRemoveDeckBtn' ? 'デッキ削除' : 'クラス削除';
+      } else {
+        // 削除用ドロップダウンを更新
+        removeSelect.innerHTML = select.innerHTML;
+        form.style.display = 'block';
+        button.textContent = '閉じる';
+      }
+    }
+
     // 初期化
     function initSelectOptions() {
       const deckSelect = document.getElementById('myDeck');
+      const removeDeckSelect = document.getElementById('removeDeckSelect');
       deckSelect.innerHTML = '';
+      removeDeckSelect.innerHTML = '';
       decks.forEach(d => {
         let opt = document.createElement('option');
         opt.textContent = d;
         deckSelect.appendChild(opt);
+        let removeOpt = document.createElement('option');
+        removeOpt.textContent = d;
+        removeDeckSelect.appendChild(removeOpt);
       });
 
       const classSelect = document.getElementById('opponentClass');
+      const removeClassSelect = document.getElementById('removeClassSelect');
       classSelect.innerHTML = '';
+      removeClassSelect.innerHTML = '';
       classes.forEach(c => {
         let opt = document.createElement('option');
         opt.textContent = c;
         classSelect.appendChild(opt);
+        let removeOpt = document.createElement('option');
+        removeOpt.textContent = c;
+        removeClassSelect.appendChild(removeOpt);
       });
     }
 
@@ -151,7 +187,7 @@
     }
 
     function removeDeck() {
-      const val = document.getElementById('myDeck').value;
+      const val = document.getElementById('removeDeckSelect').value;
       decks = decks.filter(d => d !== val);
       localStorage.setItem('decks', JSON.stringify(decks));
       matches = matches.filter(m => m.deck !== val);
@@ -172,7 +208,7 @@
     }
 
     function removeClass() {
-      const val = document.getElementById('opponentClass').value;
+      const val = document.getElementById('removeClassSelect').value;
       classes = classes.filter(c => c !== val);
       localStorage.setItem('classes', JSON.stringify(classes));
       matches = matches.filter(m => m.opponent !== val);
